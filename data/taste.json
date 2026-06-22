@@ -6,6 +6,7 @@
     "funding": 1.5,
     "startup": 1.5,
     "model-release": 2.0,
+    "mcp": 1.5,
     "ai agents": 1.0,
     "web scraping": 1.0,
     "tool use": 1.0,
@@ -26,10 +27,7 @@
     "benchmark": -2.0,
     "database": -2.0,
     "sqlite": -3.0,
-    "mcp": -1.5,
     "developer tools": -1.5,
-    "code intelligence": -1.5,
-    "ai agents": -0.5,
-    "open-source": -0.5
+    "code intelligence": -1.5
   }
 }

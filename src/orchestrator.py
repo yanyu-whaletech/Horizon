@@ -706,13 +706,20 @@ class HorizonOrchestrator:
         except Exception:
             return
 
+        # Core interests an incidental down-vote must never bury.
+        core = ("agent", "ai-agents", "agentic", "mcp", "model-release")
+
         weights: Dict[str, float] = {}
         for section in ("boost", "suppress"):
             for key, value in (taste.get(section) or {}).items():
                 try:
-                    weights[key.lower()] = weights.get(key.lower(), 0.0) + float(value)
+                    w = float(value)
                 except (TypeError, ValueError):
                     continue
+                lk = key.lower()
+                if w < 0 and any(c in lk or lk in c for c in core):
+                    continue  # protect core interests from suppression
+                weights[lk] = weights.get(lk, 0.0) + w
         if not weights:
             return
 

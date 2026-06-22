@@ -21,6 +21,15 @@ LIKE_STEP = 1.0
 DISLIKE_STEP = 1.5
 
 
+# Core interests that a down-vote must never suppress (an item often carries
+# both a boring tag and a core one; protect the core ones).
+CORE = ("agent", "ai-agents", "agentic", "mcp", "model-release")
+
+
+def _is_core(tag: str) -> bool:
+    return any(c in tag or tag in c for c in CORE)
+
+
 def _clean(tag: str) -> str:
     return tag.strip().lstrip("#").lower()
 
@@ -63,6 +72,8 @@ def main() -> None:
                 else:
                     data["suppress"][tag] = eased
         else:
+            if _is_core(tag):
+                continue  # never suppress a core interest from one down-vote
             data["suppress"][tag] = round(float(data["suppress"].get(tag, 0.0)) - DISLIKE_STEP, 2)
             # ease any prior boost of the same tag
             if tag in data["boost"]:

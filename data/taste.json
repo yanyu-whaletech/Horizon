@@ -5,7 +5,12 @@
     "agentic": 2.0,
     "funding": 1.5,
     "startup": 1.5,
-    "model-release": 2.0
+    "model-release": 2.0,
+    "ai agents": 1.0,
+    "web scraping": 1.0,
+    "tool use": 1.0,
+    "open-source": 1.0,
+    "china market": 1.0
   },
   "suppress": {
     "ml-research": -3.0,
@@ -19,7 +24,7 @@
     "mcp": -1.5,
     "developer tools": -1.5,
     "code intelligence": -1.5,
-    "ai agents": -1.5,
-    "open-source": -1.5
+    "ai agents": -0.5,
+    "open-source": -0.5
   }
 }

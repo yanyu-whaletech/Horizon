@@ -124,10 +124,13 @@
     }
   }
 
-  /** Open feedback (GitHub issue) links in a new tab so the digest stays open */
-  function openFeedbackLinksInNewTab() {
-    var links = document.querySelectorAll('a[href*="/issues/new"]');
+  /** Open external links in a new tab so the digest page stays open.
+   *  In-page jump links (TOC "#item-N") and relative links are left alone. */
+  function openLinksInNewTab() {
+    var links = document.querySelectorAll('.main-content a[href]');
     links.forEach(function (a) {
+      var href = a.getAttribute('href') || '';
+      if (href.charAt(0) === '#' || href.indexOf('http') !== 0) return;
       a.target = '_blank';
       a.rel = 'noopener';
     });
@@ -136,6 +139,6 @@
   document.addEventListener('DOMContentLoaded', function () {
     processScoreBadges();
     markSemanticElements();
-    openFeedbackLinksInNewTab();
+    openLinksInNewTab();
   });
 })();

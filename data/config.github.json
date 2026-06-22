@@ -57,10 +57,10 @@
         "category": "ai-news"
       },
       {
-        "name": "a16z",
-        "url": "https://a16z.com/feed/",
+        "name": "Import AI",
+        "url": "https://importai.substack.com/feed",
         "enabled": true,
-        "category": "vc"
+        "category": "ai-news"
       },
       {
         "name": "Latent Space",

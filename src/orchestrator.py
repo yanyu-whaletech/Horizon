@@ -103,6 +103,9 @@ class HorizonOrchestrator:
             analyzed_items = await self._analyze_content(merged_items)
             self.console.print(f"🤖 Analyzed {len(analyzed_items)} items with AI\n")
 
+            # 4.5 Apply learned taste weights (boost/suppress by tag & keyword)
+            self._apply_taste_weights(analyzed_items)
+
             # 5. Filter by score threshold
             threshold = self.config.filtering.ai_score_threshold
             important_items = [
@@ -683,6 +686,50 @@ class HorizonOrchestrator:
         analyzer = ContentAnalyzer(ai_client)
 
         return await analyzer.analyze_batch(items)
+
+    def _apply_taste_weights(self, items: List[ContentItem]) -> None:
+        """Adjust AI scores using learned taste weights in data/taste.json.
+
+        ``boost`` and ``suppress`` are maps of tag-or-keyword -> weight. For
+        each item we add the weight of every key that appears in its tags or
+        title, so disliked topics fall below the score threshold and liked
+        topics rise. The file is maintained by the feedback workflow.
+        """
+        import json
+        from pathlib import Path
+
+        taste_path = Path("data/taste.json")
+        if not taste_path.exists():
+            return
+        try:
+            taste = json.loads(taste_path.read_text(encoding="utf-8"))
+        except Exception:
+            return
+
+        weights: Dict[str, float] = {}
+        for section in ("boost", "suppress"):
+            for key, value in (taste.get(section) or {}).items():
+                try:
+                    weights[key.lower()] = weights.get(key.lower(), 0.0) + float(value)
+                except (TypeError, ValueError):
+                    continue
+        if not weights:
+            return
+
+        adjusted = 0
+        for item in items:
+            if item.ai_score is None:
+                continue
+            haystack = " ".join(t.lower() for t in item.ai_tags if t)
+            haystack += " " + (item.title or "").lower()
+            delta = sum(w for key, w in weights.items() if key and key in haystack)
+            if delta:
+                new_score = max(0.0, min(10.0, item.ai_score + delta))
+                if new_score != item.ai_score:
+                    item.ai_score = new_score
+                    adjusted += 1
+        if adjusted:
+            self.console.print(f"🎚️  Applied taste weights to {adjusted} items\n")
 
     async def _generate_summary(
         self,

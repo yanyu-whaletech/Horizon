@@ -160,6 +160,32 @@ class DailySummarizer:
         prefix = f"第 {index}/{total} 条\n\n" if language == "zh" else f"Item {index}/{total}\n\n"
         return prefix + self._format_item(item, labels, language, index).rstrip("-\n ")
 
+    def _feedback_links(self, item: ContentItem, language: str) -> str:
+        """Build 👍/👎 links that open a pre-filled GitHub issue carrying the
+        item's tags, so feedback can be folded into data/taste.json next run."""
+        import os
+        import urllib.parse
+
+        if not item.ai_tags:
+            return ""
+        repo = os.environ.get("GITHUB_REPOSITORY", "yanyu-whaletech/Horizon")
+        tags_csv = ",".join(item.ai_tags)
+        title_short = (item.title or "")[:60]
+
+        def _url(kind: str) -> str:
+            params = urllib.parse.urlencode({
+                "title": f"[{kind}] {title_short}",
+                "body": (
+                    f"tags: {tags_csv}\n\n"
+                    "(自动生成的反馈，请勿修改上面的 tags 行 / auto-generated; keep the tags line)"
+                ),
+            })
+            return f"https://github.com/{repo}/issues/new?{params}"
+
+        if language == "zh":
+            return f"<sub>[👍 想看更多]({_url('like')}) · [👎 减少这类]({_url('dislike')})</sub>"
+        return f"<sub>[👍 More like this]({_url('like')}) · [👎 Less like this]({_url('dislike')})</sub>"
+
     def _format_item(self, item: ContentItem, labels: dict, language: str, index: int) -> str:
         """Format a single ContentItem into Markdown."""
         _title = item.metadata.get(f"title_{language}") or item.title
@@ -242,6 +268,11 @@ class DailySummarizer:
             tags_str = ", ".join([f"`#{t}`" for t in item.ai_tags])
             lines.append("")
             lines.append(f"**{labels['tags']}**: {tags_str}")
+
+        feedback = self._feedback_links(item, language)
+        if feedback:
+            lines.append("")
+            lines.append(feedback)
 
         lines.append("")
         lines.append("---")

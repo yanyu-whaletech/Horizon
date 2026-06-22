@@ -1,0 +1,61 @@
+name: Taste Feedback
+
+# Turns a 👍/👎 feedback issue (opened from a briefing link) into an update
+# of data/taste.json, so the next daily run shows less of disliked topics and
+# more of liked ones. The issue title carries the kind: "[like] ..." / "[dislike] ...".
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    if: startsWith(github.event.issue.title, '[like]') || startsWith(github.event.issue.title, '[dislike]')
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Determine feedback kind
+        id: kind
+        run: |
+          title="${{ github.event.issue.title }}"
+          case "$title" in
+            '[like]'*)    echo "kind=like"    >> "$GITHUB_OUTPUT" ;;
+            '[dislike]'*) echo "kind=dislike" >> "$GITHUB_OUTPUT" ;;
+            *)            echo "kind="        >> "$GITHUB_OUTPUT" ;;
+          esac
+
+      - name: Apply feedback to taste.json
+        if: steps.kind.outputs.kind != ''
+        env:
+          FEEDBACK_KIND: ${{ steps.kind.outputs.kind }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: python3 scripts/apply_feedback.py
+
+      - name: Commit taste.json
+        if: steps.kind.outputs.kind != ''
+        run: |
+          git config user.name "horizon-bot"
+          git config user.email "horizon-bot@users.noreply.github.com"
+          if ! git diff --quiet data/taste.json; then
+            git add data/taste.json
+            git commit -m "🎚️ taste: ${{ steps.kind.outputs.kind }} (#${{ github.event.issue.number }})"
+            git push origin main
+          else
+            echo "No change to taste.json."
+          fi
+
+      - name: Acknowledge and close
+        if: steps.kind.outputs.kind != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue close "${{ github.event.issue.number }}" \
+            --comment "✅ 已记录反馈（${{ steps.kind.outputs.kind }}），明天的速递会据此调整。"

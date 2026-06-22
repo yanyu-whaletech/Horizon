@@ -1,0 +1,21 @@
+{
+  "boost": {
+    "ai-agents": 2.0,
+    "agent": 2.0,
+    "agentic": 2.0,
+    "mcp": 1.5,
+    "funding": 1.5,
+    "startup": 1.5,
+    "model-release": 2.0
+  },
+  "suppress": {
+    "ml-research": -3.0,
+    "model-training": -3.0,
+    "fine-tuning": -2.0,
+    "attention": -3.0,
+    "architecture": -2.0,
+    "benchmark": -2.0,
+    "database": -2.0,
+    "sqlite": -3.0
+  }
+}

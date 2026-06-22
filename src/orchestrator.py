@@ -99,6 +99,9 @@ class HorizonOrchestrator:
                     f"→ {len(merged_items)} unique items\n"
                 )
 
+            # 3.9 Skip items already shown on a previous run
+            merged_items = self._filter_seen(merged_items)
+
             # 4. Analyze with AI
             analyzed_items = await self._analyze_content(merged_items)
             self.console.print(f"🤖 Analyzed {len(analyzed_items)} items with AI\n")
@@ -146,11 +149,15 @@ class HorizonOrchestrator:
             # 6. Search related stories + enrich with background knowledge (2nd AI pass)
             await self._enrich_important_items(important_items)
 
+            # 6.5 Remember what we showed so it doesn't repeat next run
+            self._save_seen(important_items)
+
             # 7. Generate and save daily summaries for each configured language
             today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
             for lang in self.config.ai.languages:
                 summarizer = DailySummarizer()
-                summary = await summarizer.generate_summary(important_items, today, len(all_items), language=lang)
+                tldr = await self._generate_tldr(important_items, language=lang)
+                summary = await summarizer.generate_summary(important_items, today, len(all_items), language=lang, tldr=tldr)
 
                 # Save to data/summaries/
                 summary_path = self.storage.save_daily_summary(today, summary, language=lang)
@@ -737,6 +744,79 @@ class HorizonOrchestrator:
                     adjusted += 1
         if adjusted:
             self.console.print(f"🎚️  Applied taste weights to {adjusted} items\n")
+
+    def _load_seen(self) -> dict:
+        """Load the {item_key: YYYY-MM-DD} map of items shown on previous runs."""
+        import json
+        from pathlib import Path
+
+        path = Path("data/seen.json")
+        if not path.exists():
+            return {}
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            return data if isinstance(data, dict) else {}
+        except Exception:
+            return {}
+
+    def _filter_seen(self, items: List[ContentItem]) -> List[ContentItem]:
+        """Drop items already published on an earlier run."""
+        seen = self._load_seen()
+        if not seen:
+            return items
+        fresh = [it for it in items if (getattr(it, "id", None) or str(it.url)) not in seen]
+        dropped = len(items) - len(fresh)
+        if dropped:
+            self.console.print(f"🔁 Skipped {dropped} already-seen items\n")
+        return fresh
+
+    def _save_seen(self, items: List[ContentItem]) -> None:
+        """Record published items; prune entries older than 7 days."""
+        import json
+        from datetime import datetime, timedelta, timezone
+        from pathlib import Path
+
+        seen = self._load_seen()
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        for it in items:
+            key = getattr(it, "id", None) or str(it.url)
+            if key:
+                seen[key] = today
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).strftime("%Y-%m-%d")
+        seen = {k: v for k, v in seen.items() if v >= cutoff}
+        path = Path("data/seen.json")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(seen, ensure_ascii=False, indent=0) + "\n", encoding="utf-8")
+
+    async def _generate_tldr(self, items: List[ContentItem], language: str = "zh") -> str:
+        """One-sentence 'what mattered today', synthesized from the top items."""
+        if not items:
+            return ""
+        lines = []
+        for it in items[:8]:
+            title = it.metadata.get(f"title_{language}") or it.title
+            lines.append(f"- {title}")
+        titles = "\n".join(lines)
+        if language == "zh":
+            system = (
+                "你是一位科技资讯主编。用一句话（不超过60字）概括今天最值得关注的整体趋势，"
+                "突出 AI 智能体、产品与新模型发布。只输出这一句话，不要分点、不要前缀。"
+            )
+            user = f"今天的重要资讯标题：\n{titles}\n\n请用一句中文概括今天的看点。"
+        else:
+            system = (
+                "You are a tech news editor. In one sentence (<=40 words), capture today's "
+                "overall theme, emphasizing AI agents, products, and model releases. "
+                "Output only the sentence."
+            )
+            user = f"Today's top headlines:\n{titles}\n\nSummarize today's takeaway in one sentence."
+        try:
+            client = create_ai_client(self.config.ai)
+            text = await client.complete(system, user)
+            return (text or "").strip()
+        except Exception as exc:
+            self.console.print(f"[yellow]⚠️  TL;DR generation failed: {exc}[/yellow]\n")
+            return ""
 
     async def _generate_summary(
         self,

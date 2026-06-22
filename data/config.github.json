@@ -13,12 +13,12 @@
     "enrichment_concurrency": 1
   },
   "email": {
-    "enabled": false,
-    "smtp_server": "smtp.qq.com",
+    "enabled": true,
+    "smtp_server": "smtp.gmail.com",
     "smtp_port": 465,
-    "imap_server": "imap.qq.com",
+    "imap_server": "imap.gmail.com",
     "imap_port": 993,
-    "email_address": "xxx@qq.com",
+    "email_address": "yanyu@whaletech.ai",
     "sender_name": "Horizon Daily",
     "subscribe_keyword": "SUBSCRIBE",
     "unsubscribe_keyword": "UNSUBSCRIBE"

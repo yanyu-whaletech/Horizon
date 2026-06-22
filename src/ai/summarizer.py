@@ -67,12 +67,45 @@ class DailySummarizer:
     def __init__(self):
         pass
 
+    _SECTIONS = [
+        ("agents", "🤖 智能体", "🤖 Agents",
+         ("agent", "agentic", "mcp", "autonomous", "tool use", "tool-use", "copilot")),
+        ("models", "🚀 模型发布", "🚀 Model Releases",
+         ("model", "gpt", "claude", "gemini", "llama", "mistral", "qwen",
+          "deepseek", "frontier", "llm", "multimodal")),
+        ("funding", "💰 创业与融资", "💰 Startups & Funding",
+         ("funding", "raise", "raised", "series ", "valuation", "unicorn",
+          "acquir", "ipo", "invest", "startup", "venture", "round", "seed")),
+    ]
+
+    def _group_into_sections(self, items, language):
+        """Bucket items into themed sections by tag/title keywords (order preserved)."""
+        buckets = {key: [] for key, *_ in self._SECTIONS}
+        other = []
+        for item in items:
+            hay = " ".join(t.lower() for t in item.ai_tags if t)
+            hay += " " + (item.title or "").lower()
+            for key, _zh, _en, kws in self._SECTIONS:
+                if any(k in hay for k in kws):
+                    buckets[key].append(item)
+                    break
+            else:
+                other.append(item)
+        result = []
+        for key, zh, en, _kws in self._SECTIONS:
+            if buckets[key]:
+                result.append((zh if language == "zh" else en, buckets[key]))
+        if other:
+            result.append(("📌 其他" if language == "zh" else "📌 Other", other))
+        return result
+
     async def generate_summary(
         self,
         items: List[ContentItem],
         date: str,
         total_fetched: int,
         language: str = "en",
+        tldr: str = "",
     ) -> str:
         """Generate daily summary in Markdown format.
 
@@ -95,23 +128,33 @@ class DailySummarizer:
         header = (
             f"# {labels['header']} - {date}\n\n"
             f"> {labels['selected_items'].format(total=total_fetched, selected=len(items))}\n\n"
-            "---\n\n"
         )
+        if tldr:
+            tldr_label = "\u4eca\u65e5\u8981\u70b9" if language == "zh" else "TL;DR"
+            header += f"**{tldr_label}**\uff1a{tldr.strip()}\n\n"
+        header += "---\n\n"
 
-        # TOC
+        # Group items into themed sections, then render TOC + body in that order.
+        sections = self._group_into_sections(items, language)
+
         toc_entries = []
-        for i, item in enumerate(items):
-            _t = item.metadata.get(f"title_{language}") or item.title
-            t = str(_t).replace("[", "(").replace("]", ")")
-            if language == "zh":
-                t = _pangu(t)
-            score = item.ai_score or "?"
-            toc_entries.append(f"{i + 1}. [{t}](#item-{i + 1}) \u2b50\ufe0f {score}/10")
+        body_parts = []
+        idx = 0
+        for sec_title, sec_items in sections:
+            toc_entries.append(f"\n**{sec_title}**\n")
+            body_parts.append(f"## {sec_title}\n\n")
+            for item in sec_items:
+                idx += 1
+                _t = item.metadata.get(f"title_{language}") or item.title
+                t = str(_t).replace("[", "(").replace("]", ")")
+                if language == "zh":
+                    t = _pangu(t)
+                score = item.ai_score or "?"
+                toc_entries.append(f"{idx}. [{t}](#item-{idx}) \u2b50\ufe0f {score}/10")
+                body_parts.append(self._format_item(item, labels, language, idx))
         toc = "\n".join(toc_entries) + "\n\n---\n\n"
 
-        parts = [self._format_item(item, labels, language, i + 1) for i, item in enumerate(items)]
-
-        return header + toc + "".join(parts)
+        return header + toc + "".join(body_parts)
 
     def generate_webhook_overview(
         self,

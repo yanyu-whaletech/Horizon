@@ -127,6 +127,5 @@
   document.addEventListener('DOMContentLoaded', function () {
     processScoreBadges();
     markSemanticElements();
-    setupLanguageToggle();
   });
 })();

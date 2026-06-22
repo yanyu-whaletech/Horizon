@@ -3,7 +3,6 @@
     "ai-agents": 2.0,
     "agent": 2.0,
     "agentic": 2.0,
-    "mcp": 1.5,
     "funding": 1.5,
     "startup": 1.5,
     "model-release": 2.0
@@ -16,6 +15,11 @@
     "architecture": -2.0,
     "benchmark": -2.0,
     "database": -2.0,
-    "sqlite": -3.0
+    "sqlite": -3.0,
+    "mcp": -1.5,
+    "developer tools": -1.5,
+    "code intelligence": -1.5,
+    "ai agents": -1.5,
+    "open-source": -1.5
   }
 }

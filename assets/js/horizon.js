@@ -124,8 +124,18 @@
     }
   }
 
+  /** Open feedback (GitHub issue) links in a new tab so the digest stays open */
+  function openFeedbackLinksInNewTab() {
+    var links = document.querySelectorAll('a[href*="/issues/new"]');
+    links.forEach(function (a) {
+      a.target = '_blank';
+      a.rel = 'noopener';
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     processScoreBadges();
     markSemanticElements();
+    openFeedbackLinksInNewTab();
   });
 })();

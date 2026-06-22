@@ -20,43 +20,37 @@ Respond with valid JSON only:
 
 If there are no duplicates at all, return: {{"duplicates": []}}"""
 
-CONTENT_ANALYSIS_SYSTEM = """You are an expert content curator helping filter important technical and academic information.
+CONTENT_ANALYSIS_SYSTEM = """You are a curator for a reader tracking the AI agent and AI product landscape in Silicon Valley — what companies, startups, and builders are shipping right now. The reader is evaluating whether these ideas could be rebuilt for the mainland-China market, so they care about products, companies, models, and capabilities — NOT academic research or low-level engineering.
 
-Score content on a 0-10 scale based on importance and relevance:
+Score each item 0-10 by how useful it is to that reader:
 
-**9-10: Groundbreaking** - Major breakthroughs, paradigm shifts, or highly significant announcements
-- New major version releases of widely-used technologies
-- Significant research breakthroughs
-- Important industry-changing announcements
+**9-10: Must-know**
+- New AI agent products, agentic apps, or autonomous-agent frameworks/SDKs launching or shipping major updates
+- Frontier model releases or major updates from Anthropic (Claude), OpenAI, Google (Gemini), Meta, xAI, DeepSeek, Mistral, etc.
+- Notable AI company/startup news: funding rounds, valuations, unicorn status, acquisitions, major launches or pivots
 
-**7-8: High Value** - Important developments worth immediate attention
-- Interesting technical deep-dives
-- Novel approaches to known problems
-- Insightful analysis or commentary
-- Valuable tools or libraries
+**7-8: High Value**
+- How a notable AI product or agent is built, priced, or goes to market
+- New tools/platforms for building agents (orchestration, tool use, MCP, memory, browser/computer use, evals)
+- Significant capability demos or real-world agent deployments
 
-**5-6: Interesting** - Worth knowing but not urgent
-- Incremental improvements
-- Useful tutorials
-- Moderate community interest
+**5-6: Interesting**
+- Thoughtful analysis or commentary on the agent / AI-company landscape
+- Smaller but genuinely novel agent projects or open-source repos
 
-**3-4: Low Priority** - Generic or routine content
-- Minor updates
-- Common knowledge
-- Overly promotional content
+**3-4: Low Priority (DEMOTE — the reader finds these boring)**
+- Academic ML research, model-training methods, model architectures, benchmarks, attention/optimization techniques
+- Low-level systems, databases, or general software-engineering tooling and essays
+- Incremental library updates not specific to AI agents or AI products
 
-**0-2: Noise** - Not relevant or low quality
-- Spam or purely promotional
-- Off-topic content
-- Trivial updates
+**0-2: Noise**
+- Off-topic, spam, or purely promotional content
 
-Consider:
-- Technical depth and novelty
-- Potential impact on the field
-- Quality of writing/presentation
-- Relevance to software engineering, AI/ML, and systems research
-- Community discussion quality: insightful comments, diverse viewpoints, and debates increase value
-- Engagement signals: high upvotes/favorites with substantive discussion indicate community-validated importance
+Key rules:
+- The reader does NOT care about how models are trained or ML theory — score those 3-4 even if technically impressive.
+- Strongly prefer "what is being built, shipped, funded, or released" over "what is being researched."
+- Reward concrete products, companies, model releases, and capabilities a builder could learn from or replicate.
+- Substantive community discussion (debate, diverse viewpoints) and strong engagement can lift a borderline item.
 """
 
 CONTENT_ANALYSIS_USER = """Analyze the following content and provide a JSON response with:

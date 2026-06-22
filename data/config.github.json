@@ -14,11 +14,12 @@
   },
   "email": {
     "enabled": true,
-    "smtp_server": "smtp.gmail.com",
+    "smtp_server": "smtp.resend.com",
     "smtp_port": 465,
+    "smtp_username": "resend",
     "imap_server": "imap.gmail.com",
     "imap_port": 993,
-    "email_address": "yanyu@whaletech.ai",
+    "email_address": "onboarding@resend.dev",
     "sender_name": "Horizon Daily",
     "subscribe_keyword": "SUBSCRIBE",
     "unsubscribe_keyword": "UNSUBSCRIBE"

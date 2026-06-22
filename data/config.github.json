@@ -1,12 +1,13 @@
 {
   "version": "1.0",
   "ai": {
-    "provider": "gemini",
-    "model": "gemini-2.0-flash",
-    "api_key_env": "GOOGLE_API_KEY",
+    "provider": "anthropic",
+    "model": "sonnet",
+    "api_key_env": "ANTHROPIC_API_KEY",
+    "base_url": "https://apihub.whaletech.ai",
     "temperature": 0.3,
     "max_tokens": 4096,
-    "throttle_sec": 4,
+    "throttle_sec": 0,
     "analysis_concurrency": 1,
     "enrichment_concurrency": 1
   },

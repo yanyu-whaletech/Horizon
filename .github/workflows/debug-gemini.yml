@@ -1,0 +1,24 @@
+name: Debug Gemini
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: generateContent on gemini-2.0-flash
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        run: |
+          echo "=== generateContent (gemini-2.0-flash) ==="
+          curl -s -w "\nHTTP_STATUS:%{http_code}\n" -X POST \
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent" \
+            -H "x-goog-api-key: $GOOGLE_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"contents":[{"parts":[{"text":"Reply with the single word OK"}]}]}'
+          echo ""
+          echo "=== list models available to this key ==="
+          curl -s -w "\nHTTP_STATUS:%{http_code}\n" \
+            "https://generativelanguage.googleapis.com/v1beta/models" \
+            -H "x-goog-api-key: $GOOGLE_API_KEY" | head -c 800

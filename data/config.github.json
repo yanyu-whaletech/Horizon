@@ -99,6 +99,12 @@
         "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UC9cn0TuPq4dnbTY-CBsm8XA",
         "enabled": true,
         "category": "vc"
+      },
+      {
+        "name": "YouTube · Anthropic",
+        "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCrDwWp7EBBv4NwvScIpBDOA",
+        "enabled": true,
+        "category": "ai-news"
       }
     ],
     "reddit": {

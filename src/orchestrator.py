@@ -153,21 +153,26 @@ class HorizonOrchestrator:
             self._save_seen(important_items)
 
             # 7. Generate and save daily summaries for each configured language
-            today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            from datetime import timedelta
+
+            now_bj = datetime.now(timezone.utc) + timedelta(hours=8)
+            today = now_bj.strftime("%Y-%m-%d")
+            batch = now_bj.strftime("%H%M")  # distinguishes the midnight/noon batches
+            display_date = now_bj.strftime("%Y-%m-%d %H:%M")
             for lang in self.config.ai.languages:
                 summarizer = DailySummarizer()
                 tldr = await self._generate_tldr(important_items, language=lang)
-                summary = await summarizer.generate_summary(important_items, today, len(all_items), language=lang, tldr=tldr)
+                summary = await summarizer.generate_summary(important_items, display_date, len(all_items), language=lang, tldr=tldr)
 
                 # Save to data/summaries/
-                summary_path = self.storage.save_daily_summary(today, summary, language=lang)
+                summary_path = self.storage.save_daily_summary(f"{today}-{batch}", summary, language=lang)
                 self.console.print(f"💾 Saved {lang.upper()} summary to: {summary_path}\n")
 
                 # Copy to docs/ for GitHub Pages
                 try:
                     from pathlib import Path
 
-                    post_filename = f"{today}-summary-{lang}.md"
+                    post_filename = f"{today}-{batch}-summary-{lang}.md"
                     posts_dir = Path("docs/_posts")
                     posts_dir.mkdir(parents=True, exist_ok=True)
 
@@ -177,8 +182,8 @@ class HorizonOrchestrator:
                     front_matter = (
                         "---\n"
                         "layout: default\n"
-                        f"title: \"Horizon Summary: {today} ({lang.upper()})\"\n"
-                        f"date: {today}\n"
+                        f"title: \"Horizon Summary: {display_date} ({lang.upper()})\"\n"
+                        f"date: {today} {now_bj.strftime('%H:%M:%S')} +0800\n"
                         f"lang: {lang}\n"
                         "---\n\n"
                     )

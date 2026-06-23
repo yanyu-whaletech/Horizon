@@ -6,6 +6,7 @@ url: "https://yanyu-whaletech.github.io" # the base hostname & protocol for your
 
 # Build settings
 markdown: kramdown
+timezone: Asia/Shanghai
 future: true # Allow future posts to be published
 plugins:
   - jekyll-feed

@@ -174,9 +174,9 @@
       "enabled": true,
       "period": "past_24_hours",
       "languages": ["All"],
-      "keywords": ["agent", "LLM", "MCP", "AI"],
+      "keywords": ["agent", "agentic", "LLM", "MCP", "AI", "copilot", "autonomous", "multi-agent", "computer-use", "gpt", "claude", "gemini", "diffusion"],
       "min_stars": 50,
-      "max_items": 30
+      "max_items": 40
     }
   },
   "filtering": {

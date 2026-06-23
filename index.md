@@ -19,7 +19,7 @@ title: Home
   {% assign zh_posts = site.posts | where: "lang", "zh" %}
   {% for post in zh_posts limit:30 %}
     <li>
-      <a href="{{ post.url | relative_url }}">{{ post.date | date: "%Y-%m-%d" }}</a>
+      <a href="{{ post.url | relative_url }}">{{ post.date | date: "%Y-%m-%d %H:%M" }}</a>
     </li>
   {% else %}
     <li><em>暂无内容</em></li>

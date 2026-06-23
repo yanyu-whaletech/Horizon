@@ -50,7 +50,8 @@ Key rules:
 - The reader does NOT care about how models are trained or ML theory — score those 3-4 even if technically impressive.
 - Strongly prefer "what is being built, shipped, funded, or released" over "what is being researched."
 - Reward concrete products, companies, model releases, and capabilities a builder could learn from or replicate.
-- Substantive community discussion (debate, diverse viewpoints) and strong engagement can lift a borderline item.
+- **Engagement is a quality gate.** An item with very low engagement (few upvotes/likes and ~zero comments), or that is just a low-effort question, help request, "what do you think?" poll, or self-promotion, is LOW SIGNAL — score it 3-4 even if the topic is perfectly on-target. If no engagement data is given, judge by substance alone and stay conservative.
+- Substantive discussion (real debate, diverse viewpoints, high upvotes) lifts an item; the absence of it caps it. Favor items with real traction over relevant-but-ignored posts.
 """
 
 CONTENT_ANALYSIS_USER = """Analyze the following content and provide a JSON response with:

@@ -742,6 +742,8 @@ class HorizonOrchestrator:
             haystack = " ".join(t.lower() for t in item.ai_tags if t)
             haystack += " " + (item.title or "").lower()
             delta = sum(w for key, w in weights.items() if key and key in haystack)
+            # Cap the nudge so on-topic boosts can't override a low quality score
+            delta = max(-4.0, min(2.0, delta))
             if delta:
                 new_score = max(0.0, min(10.0, item.ai_score + delta))
                 if new_score != item.ai_score:

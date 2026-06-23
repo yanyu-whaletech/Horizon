@@ -86,7 +86,7 @@
           "sort": "hot",
           "time_filter": "day",
           "fetch_limit": 20,
-          "min_score": 50
+          "min_score": 80
         },
         {
           "subreddit": "artificial",
@@ -102,7 +102,7 @@
           "sort": "hot",
           "time_filter": "week",
           "fetch_limit": 15,
-          "min_score": 15
+          "min_score": 30
         },
         {
           "subreddit": "OpenAI",
@@ -150,7 +150,7 @@
     }
   },
   "filtering": {
-    "ai_score_threshold": 5.0,
+    "ai_score_threshold": 6.0,
     "time_window_hours": 24,
     "max_items": null,
     "category_groups": {},

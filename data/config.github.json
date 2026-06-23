@@ -75,6 +75,30 @@
         "url": "https://tldr.tech/api/rss/ai",
         "enabled": true,
         "category": "ai-news"
+      },
+      {
+        "name": "YouTube · OpenAI",
+        "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCXZCJLdBC09xxGZ6gcdrc6A",
+        "enabled": true,
+        "category": "ai-news"
+      },
+      {
+        "name": "YouTube · Google DeepMind",
+        "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCP7jMXSY2xbc3KCAE0MHQ-A",
+        "enabled": true,
+        "category": "ai-news"
+      },
+      {
+        "name": "YouTube · Y Combinator",
+        "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCcefcZRL2oaA_uBNeo5UOWg",
+        "enabled": true,
+        "category": "startups"
+      },
+      {
+        "name": "YouTube · a16z",
+        "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UC9cn0TuPq4dnbTY-CBsm8XA",
+        "enabled": true,
+        "category": "vc"
       }
     ],
     "reddit": {

@@ -28,6 +28,11 @@
     "database": -2.0,
     "sqlite": -3.0,
     "developer tools": -1.5,
-    "code intelligence": -1.5
+    "code intelligence": -1.5,
+    "alexa+": -1.5,
+    "amazon": -1.5,
+    "conversational ai": -1.5,
+    "ai assistant": -1.5,
+    "localization": -1.5
   }
 }

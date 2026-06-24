@@ -16,7 +16,12 @@
     "claude": 1.0,
     "access restrictions": 1.0,
     "ai policy": 1.0,
-    "identity verification": 1.0
+    "identity verification": 1.0,
+    "ai companions": 1.0,
+    "character ai": 1.0,
+    "multimodal ai": 1.0,
+    "avatar animation": 1.0,
+    "ai product": 1.0
   },
   "suppress": {
     "ml-research": -3.0,

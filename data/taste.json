@@ -1,6 +1,6 @@
 {
   "boost": {
-    "ai-agents": 2.0,
+    "ai-agents": 3.0,
     "agent": 2.0,
     "agentic": 2.0,
     "funding": 1.5,
@@ -21,7 +21,11 @@
     "character ai": 1.0,
     "multimodal ai": 1.0,
     "avatar animation": 1.0,
-    "ai product": 1.0
+    "ai product": 1.0,
+    "computer-use": 1.0,
+    "gemini": 1.0,
+    "google": 1.0,
+    "frontier-models": 1.0
   },
   "suppress": {
     "ml-research": -3.0,

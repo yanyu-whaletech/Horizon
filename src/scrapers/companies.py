@@ -139,7 +139,7 @@ class CompaniesScraper(BaseScraper):
         collected: List[dict] = []
         # Newest first (so the capped window catches new additions), paginate to cap.
         while len(collected) < src.max_items:
-            url = f"{base}?offset={offset}&limit={page}&ordering=-id"
+            url = f"{base}?offset={offset}&limit={page}&team_size_min=1&ordering=name"
             try:
                 resp = await self.client.get(url, follow_redirects=True, timeout=20.0)
                 resp.raise_for_status()

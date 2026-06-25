@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 import httpx
 from rich.console import Console
 
-from .models import Config, ContentItem
+from .models import Config, ContentItem, SourceType
 from .storage.manager import StorageManager
 from .services.email import EmailManager
 from .services.webhook import WebhookNotifier

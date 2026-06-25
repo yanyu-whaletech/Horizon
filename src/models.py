@@ -279,6 +279,7 @@ class CompanySourceConfig(BaseModel):
     enabled: bool = True
     urls: List[str] = Field(default_factory=list)
     max_items: int = 40
+    cohorts: int = 1  # speedrun: how many of the newest cohorts to keep
     category: str = "startups"
 
 

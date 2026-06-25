@@ -134,11 +134,11 @@ class CompaniesScraper(BaseScraper):
             if src.urls
             else "https://speedrun.a16z.com/api/companies/companyparams"
         )
-        page = 50
+        page = 100
         offset = 0
-        collected: List[dict] = []
-        # Newest first (so the capped window catches new additions), paginate to cap.
-        while len(collected) < src.max_items:
+        rows: List[dict] = []
+        # Fetch the full directory (fast HTTP) so we can pick the newest cohort.
+        while True:
             url = f"{base}?offset={offset}&limit={page}&team_size_min=1&ordering=name"
             try:
                 resp = await self.client.get(url, follow_redirects=True, timeout=20.0)
@@ -150,11 +150,22 @@ class CompaniesScraper(BaseScraper):
             results = data.get("results") if isinstance(data, dict) else data
             if not results:
                 break
-            collected.extend(results)
-            if not (isinstance(data, dict) and data.get("next")):
+            rows.extend(results)
+            if not (isinstance(data, dict) and data.get("next")) or len(rows) >= 1000:
                 break
             offset += page
-        collected = collected[: src.max_items]
+
+        # Keep only the newest cohort(s) — that is what "new companies" means and
+        # it bounds how many we score. Cohorts look like "SR003" (zero-padded),
+        # so a reverse string sort gives newest first.
+        cohorts = sorted(
+            {(r.get("cohort") or "").strip() for r in rows if r.get("cohort")},
+            reverse=True,
+        )
+        if cohorts:
+            keep = set(cohorts[: max(1, src.cohorts)])
+            rows = [r for r in rows if (r.get("cohort") or "").strip() in keep]
+        collected = rows[: src.max_items]
 
         items: List[ContentItem] = []
         for r in collected:

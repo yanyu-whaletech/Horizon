@@ -9,8 +9,8 @@
     "temperature": 0.3,
     "max_tokens": 8192,
     "throttle_sec": 0,
-    "analysis_concurrency": 3,
-    "enrichment_concurrency": 2
+    "analysis_concurrency": 1,
+    "enrichment_concurrency": 1
   },
   "email": {
     "enabled": true,
@@ -197,7 +197,8 @@
         "provider": "speedrun",
         "enabled": true,
         "urls": ["https://speedrun.a16z.com/api/companies/companyparams"],
-        "max_items": 250,
+        "max_items": 40,
+        "cohorts": 1,
         "category": "startups"
       }
     ]

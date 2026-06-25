@@ -17,6 +17,7 @@ class SourceType(str, Enum):
     TWITTER = "twitter"
     OPENBB = "openbb"
     OSSINSIGHT = "ossinsight"
+    COMPANIES = "companies"
 
 
 class ContentItem(BaseModel):
@@ -264,6 +265,23 @@ class OSSInsightConfig(BaseModel):
     max_items: int = 30
 
 
+class CompanySourceConfig(BaseModel):
+    """An accelerator/startup directory exposed via a JSON API (no RSS).
+
+    Each newly listed company is emitted as a ContentItem; cross-run de-dup
+    (data/seen.json) ensures a company surfaces only once. Providers:
+    - "yc"       -> Y Combinator batch JSON (yc-oss mirror); `urls` are batch files
+    - "speedrun" -> a16z Speedrun companies API; `urls[0]` is the API base
+    """
+
+    name: str
+    provider: str  # "yc" | "speedrun"
+    enabled: bool = True
+    urls: List[str] = Field(default_factory=list)
+    max_items: int = 40
+    category: str = "startups"
+
+
 class SourcesConfig(BaseModel):
     """All sources configuration."""
 
@@ -275,6 +293,7 @@ class SourcesConfig(BaseModel):
     twitter: Optional[TwitterConfig] = None
     openbb: Optional[OpenBBConfig] = None
     ossinsight: OSSInsightConfig = Field(default_factory=OSSInsightConfig)
+    companies: List[CompanySourceConfig] = Field(default_factory=list)
 
 
 class WebhookConfig(BaseModel):

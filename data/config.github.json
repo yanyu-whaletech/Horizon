@@ -177,7 +177,30 @@
       "keywords": ["agent", "agentic", "LLM", "MCP", "AI", "copilot", "autonomous", "multi-agent", "computer-use", "gpt", "claude", "gemini", "diffusion"],
       "min_stars": 50,
       "max_items": 40
-    }
+    },
+    "companies": [
+      {
+        "name": "Y Combinator 2026",
+        "provider": "yc",
+        "enabled": true,
+        "urls": [
+          "https://yc-oss.github.io/api/batches/winter-2026.json",
+          "https://yc-oss.github.io/api/batches/spring-2026.json",
+          "https://yc-oss.github.io/api/batches/summer-2026.json",
+          "https://yc-oss.github.io/api/batches/fall-2026.json"
+        ],
+        "max_items": 40,
+        "category": "startups"
+      },
+      {
+        "name": "a16z Speedrun",
+        "provider": "speedrun",
+        "enabled": true,
+        "urls": ["https://speedrun.a16z.com/api/companies/companyparams"],
+        "max_items": 40,
+        "category": "startups"
+      }
+    ]
   },
   "filtering": {
     "ai_score_threshold": 6.0,

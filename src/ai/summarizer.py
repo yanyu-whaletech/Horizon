@@ -79,10 +79,23 @@ class DailySummarizer:
     ]
 
     def _group_into_sections(self, items, language):
-        """Bucket items into themed sections by tag/title keywords (order preserved)."""
+        """Bucket items into themed sections (order preserved).
+
+        Company-directory items (YC / a16z Speedrun) get their own section;
+        everything else is bucketed by tag/title keywords.
+        """
+        companies = []
+        rest = []
+        for item in items:
+            stype = getattr(item, "source_type", None)
+            if getattr(stype, "value", "") == "companies":
+                companies.append(item)
+            else:
+                rest.append(item)
+
         buckets = {key: [] for key, *_ in self._SECTIONS}
         other = []
-        for item in items:
+        for item in rest:
             hay = " ".join(t.lower() for t in item.ai_tags if t)
             hay += " " + (item.title or "").lower()
             for key, _zh, _en, kws in self._SECTIONS:
@@ -91,10 +104,13 @@ class DailySummarizer:
                     break
             else:
                 other.append(item)
+
         result = []
         for key, zh, en, _kws in self._SECTIONS:
             if buckets[key]:
                 result.append((zh if language == "zh" else en, buckets[key]))
+        if companies:
+            result.append(("🆕 新锐公司" if language == "zh" else "🆕 New Startups", companies))
         if other:
             result.append(("📌 其他" if language == "zh" else "📌 Other", other))
         return result

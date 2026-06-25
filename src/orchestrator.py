@@ -22,6 +22,7 @@ from .scrapers.twitter import TwitterScraper
 from .scrapers.twitter_playwright import TwitterPlaywrightScraper
 from .scrapers.openbb import OpenBBScraper
 from .scrapers.ossinsight import OSSInsightScraper
+from .scrapers.companies import CompaniesScraper
 from .ai.client import create_ai_client
 from .ai.analyzer import ContentAnalyzer
 from .ai.summarizer import DailySummarizer
@@ -149,8 +150,13 @@ class HorizonOrchestrator:
             # 6. Search related stories + enrich with background knowledge (2nd AI pass)
             await self._enrich_important_items(important_items)
 
-            # 6.5 Remember what we showed so it doesn't repeat next run
-            self._save_seen(important_items)
+            # 6.5 Remember what we showed so it doesn't repeat next run. Also
+            # remember every directory company we evaluated (even if it didn't
+            # pass), so static directories aren't re-scored on every run.
+            company_items = [
+                it for it in analyzed_items if it.source_type == SourceType.COMPANIES
+            ]
+            self._save_seen(important_items + company_items)
 
             # 7. Generate and save daily summaries for each configured language
             from datetime import timedelta
@@ -314,6 +320,11 @@ class HorizonOrchestrator:
             if self.config.sources.ossinsight and self.config.sources.ossinsight.enabled:
                 oss_scraper = OSSInsightScraper(self.config.sources.ossinsight, client)
                 tasks.append(self._fetch_with_progress("OSS Insight", oss_scraper, since))
+
+            # Accelerator / startup directories (YC, a16z Speedrun)
+            if self.config.sources.companies:
+                companies_scraper = CompaniesScraper(self.config.sources.companies, client)
+                tasks.append(self._fetch_with_progress("Companies", companies_scraper, since))
 
             # Fetch all concurrently
             results = await asyncio.gather(*tasks, return_exceptions=True)

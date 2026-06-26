@@ -115,7 +115,8 @@ class AnthropicClient(AIClient):
 
         api_key = _resolve_api_key(config)
 
-        kwargs = {"api_key": api_key}
+        # x-title attributes this product's usage in the WhaleAPI gateway Logs.
+        kwargs = {"api_key": api_key, "default_headers": {"x-title": "horizon"}}
         if config.base_url:
             kwargs["base_url"] = config.base_url
 

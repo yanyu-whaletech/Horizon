@@ -111,6 +111,12 @@
         "url": "https://github.com/google-gemini/computer-use-preview/commits.atom",
         "enabled": true,
         "category": "ai-tools"
+      },
+      {
+        "name": "GitHub · opencyvis/opencyvis-phone (commits)",
+        "url": "https://github.com/opencyvis/opencyvis-phone/commits.atom",
+        "enabled": true,
+        "category": "ai-tools"
       }
     ],
     "reddit": {

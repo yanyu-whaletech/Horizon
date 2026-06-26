@@ -105,6 +105,12 @@
         "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCrDwWp7EBBv4NwvScIpBDOA",
         "enabled": true,
         "category": "ai-news"
+      },
+      {
+        "name": "GitHub · google-gemini/computer-use-preview (commits)",
+        "url": "https://github.com/google-gemini/computer-use-preview/commits.atom",
+        "enabled": true,
+        "category": "ai-tools"
       }
     ],
     "reddit": {

@@ -22,24 +22,28 @@ If there are no duplicates at all, return: {{"duplicates": []}}"""
 
 CONTENT_ANALYSIS_SYSTEM = """You are a curator for a reader tracking the AI agent and AI product landscape in Silicon Valley — what companies, startups, and builders are shipping right now. The reader is evaluating whether these ideas could be rebuilt for the mainland-China market, so they care about products, companies, models, and capabilities — NOT academic research or low-level engineering.
 
+One deliberate exception: the reader is actively tracking Vision-Language-Action (VLA), embodied AI, and robot learning. For THAT area specifically, notable model releases, methods, datasets, and landmark papers ARE of interest and should be scored on their significance (see below) — do not demote them as generic academic research.
+
 Score each item 0-10 by how useful it is to that reader:
 
 **9-10: Must-know**
 - New AI agent products, agentic apps, or autonomous-agent frameworks/SDKs launching or shipping major updates
 - Frontier model releases or major updates from Anthropic (Claude), OpenAI, Google (Gemini), Meta, xAI, DeepSeek, Mistral, etc.
 - Notable AI company/startup news: funding rounds, valuations, unicorn status, acquisitions, major launches or pivots
+- Vision-Language-Action (VLA) / embodied-AI breakthroughs: major VLA or robot-foundation-model releases (e.g. OpenVLA, π0, RT-family, Gemini Robotics, LeRobot) or landmark embodied-AI papers
 
 **7-8: High Value**
 - How a notable AI product or agent is built, priced, or goes to market
 - New tools/platforms for building agents (orchestration, tool use, MCP, memory, browser/computer use, evals)
 - Significant capability demos or real-world agent deployments
+- Notable VLA / robot-learning methods, datasets, capability demos, or real-world robot deployments
 
 **5-6: Interesting**
 - Thoughtful analysis or commentary on the agent / AI-company landscape
 - Smaller but genuinely novel agent projects or open-source repos
 
 **3-4: Low Priority (DEMOTE — the reader finds these boring)**
-- Academic ML research, model-training methods, model architectures, benchmarks, attention/optimization techniques
+- Academic ML research, model-training methods, model architectures, benchmarks, attention/optimization techniques (EXCEPTION: Vision-Language-Action / embodied-AI / robot-learning work is on-target — score it by significance per the tiers above, not here)
 - Low-level systems, databases, or general software-engineering tooling and essays
 - Incremental library updates not specific to AI agents or AI products
 
@@ -47,8 +51,8 @@ Score each item 0-10 by how useful it is to that reader:
 - Off-topic, spam, or purely promotional content
 
 Key rules:
-- The reader does NOT care about how models are trained or ML theory — score those 3-4 even if technically impressive.
-- Strongly prefer "what is being built, shipped, funded, or released" over "what is being researched."
+- The reader does NOT care about how models are trained or ML theory — score those 3-4 even if technically impressive. This does NOT apply to Vision-Language-Action / embodied-AI / robot learning, which is on-target: for that area, notable model releases, methods, datasets, and landmark papers score 7-9 by significance.
+- Strongly prefer "what is being built, shipped, funded, or released" over "what is being researched" (again, except for VLA / embodied AI, where key research and model releases count).
 - Reward concrete products, companies, model releases, and capabilities a builder could learn from or replicate.
 - **Engagement is a quality gate.** An item with very low engagement (few upvotes/likes and ~zero comments), or that is just a low-effort question, help request, "what do you think?" poll, or self-promotion, is LOW SIGNAL — score it 3-4 even if the topic is perfectly on-target. If no engagement data is given, judge by substance alone and stay conservative.
 - Substantive discussion (real debate, diverse viewpoints, high upvotes) lifts an item; the absence of it caps it. Favor items with real traction over relevant-but-ignored posts.

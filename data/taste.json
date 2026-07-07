@@ -25,7 +25,14 @@
     "computer-use": 1.0,
     "gemini": 1.0,
     "google": 1.0,
-    "frontier-models": 1.0
+    "frontier-models": 1.0,
+    "vla": 1.5,
+    "vision-language-action": 1.5,
+    "embodied-ai": 1.0,
+    "embodied ai": 1.0,
+    "robotics": 1.0,
+    "lerobot": 1.0,
+    "humanoid": 1.0
   },
   "suppress": {
     "ml-research": -3.0,

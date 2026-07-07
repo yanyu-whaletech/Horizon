@@ -38,6 +38,18 @@
         "owner": "browser-use",
         "repo": "browser-use",
         "enabled": true
+      },
+      {
+        "type": "repo_releases",
+        "owner": "huggingface",
+        "repo": "lerobot",
+        "enabled": true
+      },
+      {
+        "type": "repo_releases",
+        "owner": "Physical-Intelligence",
+        "repo": "openpi",
+        "enabled": true
       }
     ],
     "hackernews": {
@@ -117,6 +129,12 @@
         "url": "https://github.com/opencyvis/opencyvis-phone/commits.atom",
         "enabled": true,
         "category": "ai-tools"
+      },
+      {
+        "name": "arXiv · Vision-Language-Action (VLA)",
+        "url": "https://export.arxiv.org/api/query?search_query=abs:%22vision-language-action%22&start=0&max_results=30&sortBy=submittedDate&sortOrder=descending",
+        "enabled": true,
+        "category": "vla"
       }
     ],
     "reddit": {
@@ -186,7 +204,7 @@
       "enabled": true,
       "period": "past_24_hours",
       "languages": ["All"],
-      "keywords": ["agent", "agentic", "LLM", "MCP", "AI", "copilot", "autonomous", "multi-agent", "computer-use", "gpt", "claude", "gemini", "diffusion"],
+      "keywords": ["agent", "agentic", "LLM", "MCP", "AI", "copilot", "autonomous", "multi-agent", "computer-use", "gpt", "claude", "gemini", "diffusion", "VLA", "vision-language-action", "robotics", "embodied", "manipulation", "humanoid", "lerobot"],
       "min_stars": 50,
       "max_items": 40
     },

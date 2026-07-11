@@ -32,7 +32,12 @@
     "embodied ai": 1.0,
     "robotics": 1.0,
     "lerobot": 1.0,
-    "humanoid": 1.0
+    "humanoid": 1.0,
+    "ai video editing": 1.0,
+    "yc startup": 1.0,
+    "generative ai": 1.0,
+    "enterprise software": 1.0,
+    "media infrastructure": 1.0
   },
   "suppress": {
     "ml-research": -3.0,

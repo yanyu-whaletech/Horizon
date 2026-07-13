@@ -7,7 +7,7 @@
     "startup": 1.5,
     "model-release": 2.0,
     "mcp": 1.5,
-    "ai agents": 1.0,
+    "ai agents": 2.0,
     "web scraping": 1.0,
     "tool use": 1.0,
     "open-source": 1.0,
@@ -37,7 +37,11 @@
     "yc startup": 1.0,
     "generative ai": 1.0,
     "enterprise software": 1.0,
-    "media infrastructure": 1.0
+    "media infrastructure": 1.0,
+    "multi-agent workflows": 1.0,
+    "claude code": 1.0,
+    "codex": 1.0,
+    "agent coordination": 1.0
   },
   "suppress": {
     "ml-research": -3.0,

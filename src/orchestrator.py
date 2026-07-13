@@ -4,12 +4,14 @@ import asyncio
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
+from time import perf_counter
 from typing import List, Dict, Optional
 from urllib.parse import urlparse
 import httpx
 from rich.console import Console
 
 from .models import Config, ContentItem, SourceType
+from .error_utils import safe_error_message
 from .storage.manager import StorageManager
 from .services.email import EmailManager
 from .services.webhook import WebhookNotifier
@@ -54,6 +56,7 @@ class HorizonOrchestrator:
         self.config = config
         self.storage = storage
         self.console = Console()
+        self.last_fetch_report: Dict[str, Dict[str, object]] = {}
         self.email_manager = EmailManager(config.email, console=self.console) if config.email else None
         self.webhook_notifier = (
             WebhookNotifier(config.webhook, console=self.console)
@@ -274,6 +277,7 @@ class HorizonOrchestrator:
         Returns:
             List[ContentItem]: All fetched items
         """
+        self.last_fetch_report = {}
         async with httpx.AsyncClient(timeout=30.0) as client:
             tasks = []
 
@@ -351,7 +355,30 @@ class HorizonOrchestrator:
             List[ContentItem]: Fetched items
         """
         self.console.print(f"🔍 Fetching from {name}...")
-        items = await scraper.fetch(since)
+        source_key = self._source_health_key(name)
+        started = perf_counter()
+        checked_at = datetime.now(timezone.utc).isoformat()
+        try:
+            items = await scraper.fetch(since)
+        except Exception as exc:
+            self.last_fetch_report[source_key] = {
+                "status": "failed",
+                "checked_at": checked_at,
+                "duration_ms": round((perf_counter() - started) * 1000),
+                "item_count": 0,
+                "error": {
+                    "type": exc.__class__.__name__,
+                    "message": safe_error_message(exc),
+                },
+            }
+            raise
+
+        self.last_fetch_report[source_key] = {
+            "status": "succeeded",
+            "checked_at": checked_at,
+            "duration_ms": round((perf_counter() - started) * 1000),
+            "item_count": len(items),
+        }
         self.console.print(f"   Found {len(items)} items from {name}")
 
         # Show per-sub-source breakdown when there are multiple sub-sources
@@ -363,6 +390,23 @@ class HorizonOrchestrator:
                 self.console.print(f"      • {sub}: {count}")
 
         return items
+
+    @staticmethod
+    def _source_health_key(name: str) -> str:
+        """Return a stable key for persisted source health metadata."""
+
+        aliases = {
+            "GitHub": "github",
+            "Hacker News": "hackernews",
+            "RSS Feeds": "rss",
+            "Reddit": "reddit",
+            "Telegram": "telegram",
+            "Twitter": "twitter",
+            "OpenBB": "openbb",
+            "OSS Insight": "ossinsight",
+            "Companies": "companies",
+        }
+        return aliases.get(name, name.strip().lower().replace(" ", "_"))
 
     @staticmethod
     def _sub_source_label(item: ContentItem) -> str:

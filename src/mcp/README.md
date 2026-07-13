@@ -51,6 +51,18 @@ Each run writes artifacts under `data/mcp-runs/<run_id>/`:
 - `enriched_items.json`
 - `summary-<lang>.md`
 
+Full pipeline runs also expose durable lifecycle data in `meta.json`:
+
+- top-level `status`: `created`, `running`, `succeeded`, or `failed`
+- `started_at`, `completed_at`, and `duration_ms`
+- `current_stage` while work is active, or `failed_stage` after an error
+- per-stage status, timestamps, duration, and a compact error snapshot
+- `source_health` after fetching, with status, item count, latency, and any
+  source-specific error
+
+Metadata and summary artifacts are replaced atomically so readers do not see a
+partially written JSON or Markdown file.
+
 ## Design Principles
 
 1. Keep Horizon as the single source of business logic.

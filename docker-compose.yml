@@ -1,4 +1,6 @@
 services:
+  # Optional one-shot runner. Scheduled production runs are handled by
+  # .github/workflows/daily-summary.yml, so this container does not stay alive.
   horizon:
     build: .
     container_name: horizon
@@ -7,7 +9,5 @@ services:
       - ./.env:/app/.env:ro
     environment:
       - TZ=UTC
-    restart: unless-stopped
-    # Run daily at 8:00 AM UTC (adjust as needed)
-    # For one-time run, use: docker compose run --rm horizon
+    restart: "no"
     command: ["--hours", "24"]

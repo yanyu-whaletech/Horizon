@@ -244,6 +244,8 @@ class HorizonPipelineService:
 
         raw_items = await orchestrator.fetch_all_sources(since)
         merged_items = orchestrator.merge_cross_source_duplicates(raw_items)
+        source_counts = get_source_counts(merged_items)
+        source_health = getattr(orchestrator, "last_fetch_report", {})
 
         self.run_store.save_items(run_id, "raw", items_to_dicts(merged_items))
         meta = self.run_store.update_meta(
@@ -257,6 +259,8 @@ class HorizonPipelineService:
                 "unknown_sources": unknown_sources,
                 "raw_count_before_merge": len(raw_items),
                 "raw_count": len(merged_items),
+                "source_counts": source_counts,
+                "source_health": source_health,
             },
         )
 
@@ -264,7 +268,8 @@ class HorizonPipelineService:
             "run_id": run_id,
             "fetched": len(merged_items),
             "raw_before_merge": len(raw_items),
-            "source_counts": get_source_counts(merged_items),
+            "source_counts": source_counts,
+            "source_health": source_health,
             "artifact": str((self.run_store.run_dir(run_id) / "raw_items.json").resolve()),
             "meta": meta,
         }
@@ -496,57 +501,73 @@ class HorizonPipelineService:
         topic_dedup: bool = True,
         save_to_horizon_data: bool = False,
     ) -> dict[str, Any]:
-        fetch_result = await self.fetch_items(
-            hours=hours,
-            horizon_path=horizon_path,
-            config_path=config_path,
-            sources=sources,
-        )
-        run_id = fetch_result["run_id"]
+        run_id = self.run_store.create_run()
+        self.run_store.start_run(run_id, operation="pipeline")
 
-        score_result = await self.score_items(
-            run_id=run_id,
-            horizon_path=horizon_path,
-            config_path=config_path,
-        )
+        try:
+            with self.run_store.track_stage(run_id, "raw"):
+                fetch_result = await self.fetch_items(
+                    hours=hours,
+                    run_id=run_id,
+                    horizon_path=horizon_path,
+                    config_path=config_path,
+                    sources=sources,
+                )
 
-        filter_result = await self.filter_items(
-            run_id=run_id,
-            threshold=threshold,
-            topic_dedup=topic_dedup,
-            horizon_path=horizon_path,
-            config_path=config_path,
-        )
+            with self.run_store.track_stage(run_id, "scored"):
+                score_result = await self.score_items(
+                    run_id=run_id,
+                    horizon_path=horizon_path,
+                    config_path=config_path,
+                )
 
-        enrich_result: dict[str, Any] | None = None
-        stage_for_summary = "filtered"
-        if enrich:
-            enrich_result = await self.enrich_items(
-                run_id=run_id,
-                source_stage="filtered",
+            with self.run_store.track_stage(run_id, "filtered"):
+                filter_result = await self.filter_items(
+                    run_id=run_id,
+                    threshold=threshold,
+                    topic_dedup=topic_dedup,
+                    horizon_path=horizon_path,
+                    config_path=config_path,
+                )
+
+            enrich_result: dict[str, Any] | None = None
+            stage_for_summary = "filtered"
+            if enrich:
+                with self.run_store.track_stage(run_id, "enriched"):
+                    enrich_result = await self.enrich_items(
+                        run_id=run_id,
+                        source_stage="filtered",
+                        horizon_path=horizon_path,
+                        config_path=config_path,
+                    )
+                stage_for_summary = "enriched"
+
+            ctx, _, _ = self._build_context(
                 horizon_path=horizon_path,
                 config_path=config_path,
+                sources=sources,
             )
-            stage_for_summary = "enriched"
+            final_languages = languages if languages else list(ctx.config.ai.languages)
 
-        ctx, _, _ = self._build_context(
-            horizon_path=horizon_path,
-            config_path=config_path,
-            sources=sources,
-        )
-        final_languages = languages if languages else list(ctx.config.ai.languages)
+            summaries = []
+            for lang in final_languages:
+                with self.run_store.track_stage(run_id, f"summary:{lang}"):
+                    summary_result = await self.generate_summary(
+                        run_id=run_id,
+                        language=lang,
+                        source_stage=stage_for_summary,
+                        horizon_path=horizon_path,
+                        config_path=config_path,
+                        save_to_horizon_data=save_to_horizon_data,
+                    )
+                summaries.append(summary_result)
 
-        summaries = []
-        for lang in final_languages:
-            summary_result = await self.generate_summary(
-                run_id=run_id,
-                language=lang,
-                source_stage=stage_for_summary,
-                horizon_path=horizon_path,
-                config_path=config_path,
-                save_to_horizon_data=save_to_horizon_data,
-            )
-            summaries.append(summary_result)
+            meta = self.run_store.complete_run(run_id)
+        except BaseException as exc:
+            meta = self.run_store.load_meta(run_id)
+            if meta.get("status") != "failed":
+                self.run_store.fail_run(run_id, exc)
+            raise
 
         return {
             "run_id": run_id,
@@ -555,7 +576,7 @@ class HorizonPipelineService:
             "filter": filter_result,
             "enrich": enrich_result,
             "summaries": summaries,
-            "meta": self.run_store.load_meta(run_id),
+            "meta": meta,
         }
 
     def _build_context(

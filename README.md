@@ -210,12 +210,15 @@ cp .env.example .env
 cp data/config.example.json data/config.json
 # Edit .env and data/config.json with your API keys and preferences
 
-# Run with Docker Compose
+# Run once with Docker Compose
 docker compose run --rm horizon
 
 # Or run with custom time window
 docker compose run --rm horizon --hours 48
 ```
+
+Docker is optional and only runs Horizon once; it does not need to remain
+online between runs.
 
 ### 2. Configure
 
@@ -327,7 +330,16 @@ The generated report will be saved to `data/summaries/`.
 
 ### 4. Automate (Optional)
 
-Horizon works great as a **GitHub Actions** cron job. See [`.github/workflows/daily-summary.yml`](.github/workflows/daily-summary.yml) for a ready-to-use workflow that generates and deploys your daily briefing to GitHub Pages automatically.
+The recommended hosted setup is the included **GitHub Actions** workflow. It
+runs Horizon on GitHub's infrastructure, generates the briefing, and deploys it
+to GitHub Pages, so you do not need a server or an always-running Docker
+container. See [`.github/workflows/daily-summary.yml`](.github/workflows/daily-summary.yml).
+
+For a safe live check, open **Actions → Daily Horizon Summary → Run workflow**
+and leave `dry_run` enabled. Dry runs use a small Hacker News sample, exercise
+AI scoring through summary generation, upload the generated files as a
+seven-day artifact, and skip email, webhooks, Pages deployment, and persistent
+seen-state.
 
 ## Supported Sources
 
@@ -370,6 +382,7 @@ Horizon is an open-source project maintained in spare time. If you'd like to sup
 | [Scoring](docs/scoring.md) | How Horizon evaluates and ranks news items |
 | [Scrapers](docs/scrapers.md) | Source scraper details and extension notes |
 | [MCP Tools](src/mcp/README.md) | Tool reference for MCP-compatible clients |
+| [Huginn Integration](docs/huginn.md) | Bridge Huginn event sources and actions through RSS and webhooks |
 
 ## Project Status
 

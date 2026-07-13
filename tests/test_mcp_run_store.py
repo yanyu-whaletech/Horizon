@@ -15,6 +15,8 @@ def test_create_run_writes_meta(tmp_path: Path) -> None:
 
     assert run_id.startswith("run-")
     assert meta["run_id"] == run_id
+    assert meta["status"] == "created"
+    assert meta["stages"] == {}
     assert "created_at" in meta
 
 
@@ -103,3 +105,46 @@ def test_list_runs_returns_desc_order(tmp_path: Path) -> None:
 
     assert runs[0]["run_id"] == "run-2"
     assert runs[1]["run_id"] == "run-1"
+
+
+def test_track_stage_and_complete_run_records_lifecycle(tmp_path: Path) -> None:
+    store = RunStore(tmp_path)
+    run_id = store.create_run("run-lifecycle")
+
+    with store.track_stage(run_id, "raw"):
+        pass
+    meta = store.complete_run(run_id)
+
+    assert meta["status"] == "succeeded"
+    assert meta["operation"] == "pipeline"
+    assert meta["stages"]["raw"]["status"] == "succeeded"
+    assert meta["stages"]["raw"]["duration_ms"] >= 0
+    assert meta["duration_ms"] >= 0
+    assert "completed_at" in meta
+
+
+def test_track_stage_records_failure(tmp_path: Path) -> None:
+    store = RunStore(tmp_path)
+    run_id = store.create_run("run-failed")
+
+    with pytest.raises(RuntimeError, match="scraper unavailable"):
+        with store.track_stage(run_id, "raw"):
+            raise RuntimeError("scraper unavailable")
+
+    meta = store.load_meta(run_id)
+    assert meta["status"] == "failed"
+    assert meta["failed_stage"] == "raw"
+    assert meta["error"] == {
+        "type": "RuntimeError",
+        "message": "scraper unavailable",
+    }
+    assert meta["stages"]["raw"]["status"] == "failed"
+
+
+def test_track_stage_rejects_unsafe_name(tmp_path: Path) -> None:
+    store = RunStore(tmp_path)
+    run_id = store.create_run("run-safe-stage")
+
+    with pytest.raises(ValueError, match="Invalid stage name"):
+        with store.track_stage(run_id, "../raw"):
+            pass

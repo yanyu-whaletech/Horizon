@@ -4,7 +4,18 @@ on:
   schedule:
     - cron: '0 16 * * *'   # 16:00 UTC == 00:00 Asia/Shanghai (Beijing midnight)
     - cron: '0 4 * * *'    # 04:00 UTC == 12:00 Asia/Shanghai (Beijing noon)
-  workflow_dispatch:      # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Run a small live pipeline without delivery, deployment, or persistent state
+        required: true
+        default: true
+        type: boolean
+      hours:
+        description: Lookback window used by a dry run
+        required: true
+        default: 6
+        type: number
 
 jobs:
   daily-summary:
@@ -30,7 +41,32 @@ jobs:
       - name: Prepare GitHub Actions config
         run: cp data/config.github.json data/config.json
 
+      - name: Restrict dry-run scope and disable side effects
+        if: github.event_name == 'workflow_dispatch' && inputs.dry_run == true
+        shell: bash
+        run: |
+          jq '
+            .sources.github = [] |
+            .sources.rss = [] |
+            .sources.reddit.enabled = false |
+            .sources.reddit.subreddits = [] |
+            .sources.reddit.users = [] |
+            .sources.telegram.enabled = false |
+            .sources.telegram.channels = [] |
+            (if .sources.twitter then .sources.twitter.enabled = false | .sources.twitter.users = [] else . end) |
+            (if .sources.openbb then .sources.openbb.enabled = false | .sources.openbb.watchlists = [] else . end) |
+            .sources.ossinsight.enabled = false |
+            .sources.companies = [] |
+            .sources.hackernews.enabled = true |
+            .sources.hackernews.fetch_top_stories = 10 |
+            .filtering.max_items = 5 |
+            (if .email then .email.enabled = false else . end) |
+            (if .webhook then .webhook.enabled = false else . end)
+          ' data/config.json > data/config.dry-run.json
+          mv data/config.dry-run.json data/config.json
+
       - name: Restore seen-state (cross-run de-dup)
+        if: github.event_name != 'workflow_dispatch' || inputs.dry_run != true
         uses: actions/cache@v4
         with:
           path: data/seen.json
@@ -46,12 +82,39 @@ jobs:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
           LWN_KEY: ${{ secrets.LWN_KEY }}
-        run: uv run horizon --hours 24
+        shell: bash
+        run: |
+          HOURS=24
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.dry_run }}" == "true" ]]; then
+            HOURS="${{ inputs.hours }}"
+          fi
+          uv run horizon --hours "$HOURS"
+
+      - name: Upload dry-run artifacts
+        if: github.event_name == 'workflow_dispatch' && inputs.dry_run == true
+        uses: actions/upload-artifact@v4
+        with:
+          name: horizon-dry-run-${{ github.run_id }}
+          path: |
+            data/summaries/
+            docs/_posts/
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Add dry-run summary
+        if: github.event_name == 'workflow_dispatch' && inputs.dry_run == true
+        shell: bash
+        run: |
+          echo "## Horizon dry run succeeded" >> "$GITHUB_STEP_SUMMARY"
+          echo "Live Hacker News input, AI scoring, filtering, enrichment, and summary generation completed." >> "$GITHUB_STEP_SUMMARY"
+          echo "No email, webhook, Pages deployment, or persistent seen-state was used." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Set current date as environment variable
+        if: github.event_name != 'workflow_dispatch' || inputs.dry_run != true
         run: echo "DATE=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
 
       - name: Deploy to GitHub Pages
+        if: github.event_name != 'workflow_dispatch' || inputs.dry_run != true
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -63,7 +126,7 @@ jobs:
 
   notify-failure:
     needs: daily-summary
-    if: failure()
+    if: failure() && (github.event_name != 'workflow_dispatch' || inputs.dry_run != true)
     runs-on: ubuntu-latest
     permissions:
       issues: write

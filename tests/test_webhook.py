@@ -1304,9 +1304,13 @@ class TestURLValidation:
 
 
 class TestHTTPStatusHandling:
-    def _make_notifier(self):
+    def _make_notifier(self, platform="generic"):
         os.environ[_TEST_URL_ENV] = _TEST_URL
-        config = WebhookConfig(enabled=True, url_env=_TEST_URL_ENV)
+        config = WebhookConfig(
+            enabled=True,
+            url_env=_TEST_URL_ENV,
+            platform=platform,
+        )
         notifier = WebhookNotifier(config)
         return notifier
 
@@ -1340,7 +1344,7 @@ class TestHTTPStatusHandling:
 
     def test_2xx_feishu_error_code_prints_yellow_warning(self):
         """Feishu returns HTTP 200 with code=19001 in body — should be yellow warning."""
-        notifier = self._make_notifier()
+        notifier = self._make_notifier(platform="feishu")
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.text = '{"code":19001,"msg":"param invalid: incoming webhook access token invalid"}'
@@ -1365,7 +1369,7 @@ class TestHTTPStatusHandling:
 
     def test_2xx_dingtalk_error_code_prints_yellow_warning(self):
         """DingTalk returns HTTP 200 with errcode=400 in body — should be yellow warning."""
-        notifier = self._make_notifier()
+        notifier = self._make_notifier(platform="dingtalk")
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.text = '{"errcode":400,"errmsg":"invalid token"}'
@@ -1390,7 +1394,7 @@ class TestHTTPStatusHandling:
 
     def test_2xx_slack_ok_false_prints_yellow_warning(self):
         """Slack returns HTTP 200 with ok=false — should be yellow warning."""
-        notifier = self._make_notifier()
+        notifier = self._make_notifier(platform="slack")
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.text = '{"ok":false,"error":"invalid_token"}'

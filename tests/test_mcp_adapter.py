@@ -82,7 +82,7 @@ def test_load_config_expands_env_vars(tmp_path: Path, monkeypatch) -> None:
     assert config.ai.base_url == "https://api.example.com/v1"
 
 
-def test_apply_source_filter_handles_twitter_and_openbb() -> None:
+def test_apply_source_filter_handles_optional_sources() -> None:
     config = Config.model_validate(
         {
             "ai": {
@@ -96,6 +96,14 @@ def test_apply_source_filter_handles_twitter_and_openbb() -> None:
                     "enabled": True,
                     "watchlists": [{"name": "ai", "symbols": ["NVDA"]}],
                 },
+                "ossinsight": {"enabled": True},
+                "companies": [
+                    {
+                        "name": "YC",
+                        "provider": "yc",
+                        "urls": ["https://example.com/yc.json"],
+                    }
+                ],
             },
             "filtering": {},
         }
@@ -108,3 +116,5 @@ def test_apply_source_filter_handles_twitter_and_openbb() -> None:
     assert filtered.sources.twitter.enabled is True
     assert filtered.sources.openbb.enabled is False
     assert filtered.sources.openbb.watchlists == []
+    assert filtered.sources.ossinsight.enabled is False
+    assert filtered.sources.companies == []

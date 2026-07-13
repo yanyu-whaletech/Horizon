@@ -5,6 +5,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+
 from src.models import ContentItem, SourceType
 from src.mcp.server import hz_get_metrics
 from src.mcp.service import HorizonPipelineService
@@ -92,6 +94,10 @@ def test_fetch_items_uses_public_orchestrator_api(tmp_path: Path, monkeypatch) -
     monkeypatch.setattr("src.mcp.service.make_storage", lambda runtime, config_path: object())
 
     class FakeOrchestrator:
+        last_fetch_report = {
+            "rss": {"status": "succeeded", "item_count": 2, "duration_ms": 5}
+        }
+
         async def fetch_all_sources(self, since):  # type: ignore[no-untyped-def]
             return [make_item("item-1"), make_item("item-2")]
 
@@ -107,6 +113,8 @@ def test_fetch_items_uses_public_orchestrator_api(tmp_path: Path, monkeypatch) -
 
     assert result["fetched"] == 1
     assert result["raw_before_merge"] == 2
+    assert result["source_health"]["rss"]["status"] == "succeeded"
+    assert result["meta"]["source_health"] == result["source_health"]
     assert service.run_store.load_items(result["run_id"], "raw")[0]["id"] == "item-1"
 
 
@@ -185,3 +193,63 @@ def test_filter_items_applies_balanced_digest(tmp_path: Path, monkeypatch) -> No
     assert result["removed_by_balanced_digest"] == 1
     assert result["balanced_digest_enabled"] is True
     assert result["group_counts"] == {"other": 1}
+
+
+def test_run_pipeline_records_successful_stage_lifecycle(tmp_path: Path, monkeypatch) -> None:
+    service = HorizonPipelineService(runs_root=tmp_path / "mcp-runs")
+
+    async def fake_fetch(**kwargs):  # type: ignore[no-untyped-def]
+        return {"run_id": kwargs["run_id"]}
+
+    async def fake_stage(**kwargs):  # type: ignore[no-untyped-def]
+        return {"run_id": kwargs["run_id"]}
+
+    monkeypatch.setattr(service, "fetch_items", fake_fetch)
+    monkeypatch.setattr(service, "score_items", fake_stage)
+    monkeypatch.setattr(service, "filter_items", fake_stage)
+    monkeypatch.setattr(service, "generate_summary", fake_stage)
+    monkeypatch.setattr(
+        service,
+        "_build_context",
+        lambda **kwargs: (
+            SimpleNamespace(config=SimpleNamespace(ai=SimpleNamespace(languages=["en"]))),
+            [],
+            [],
+        ),
+    )
+
+    result = asyncio.run(service.run_pipeline(enrich=False))
+
+    assert result["meta"]["status"] == "succeeded"
+    assert set(result["meta"]["stages"]) == {
+        "raw",
+        "scored",
+        "filtered",
+        "summary:en",
+    }
+    assert all(
+        stage["status"] == "succeeded"
+        for stage in result["meta"]["stages"].values()
+    )
+
+
+def test_run_pipeline_records_failed_stage(tmp_path: Path, monkeypatch) -> None:
+    service = HorizonPipelineService(runs_root=tmp_path / "mcp-runs")
+
+    async def fake_fetch(**kwargs):  # type: ignore[no-untyped-def]
+        return {"run_id": kwargs["run_id"]}
+
+    async def fail_score(**kwargs):  # type: ignore[no-untyped-def]
+        raise RuntimeError("model unavailable")
+
+    monkeypatch.setattr(service, "fetch_items", fake_fetch)
+    monkeypatch.setattr(service, "score_items", fail_score)
+
+    with pytest.raises(RuntimeError, match="model unavailable"):
+        asyncio.run(service.run_pipeline(enrich=False))
+
+    meta = service.run_store.list_runs(limit=1)[0]["meta"]
+    assert meta["status"] == "failed"
+    assert meta["failed_stage"] == "scored"
+    assert meta["stages"]["raw"]["status"] == "succeeded"
+    assert meta["stages"]["scored"]["status"] == "failed"

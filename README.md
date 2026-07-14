@@ -341,6 +341,12 @@ AI scoring through summary generation, upload the generated files as a
 seven-day artifact, and skip email, webhooks, Pages deployment, and persistent
 seen-state.
 
+If every AI analysis request exhausts its retries because the provider is
+temporarily unavailable, the scheduled job waits 30 minutes and retries the
+complete task once. Horizon does not publish or deliver the failed first
+attempt. If the retry also fails, the workflow is marked failed and opens the
+normal failure issue instead of producing an empty digest.
+
 ## Supported Sources
 
 | Source | What it fetches | Comments |

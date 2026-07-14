@@ -2,8 +2,14 @@ import asyncio
 from datetime import datetime, timezone
 from types import SimpleNamespace
 
+import pytest
+
 import src.ai.analyzer as analyzer_module
-from src.ai.analyzer import ContentAnalyzer
+from src.ai.analyzer import (
+    AnalysisBatchError,
+    ContentAnalyzer,
+    TransientAnalysisError,
+)
 from src.models import ContentItem, SourceType
 
 
@@ -94,3 +100,68 @@ def test_analyze_batch_concurrent_preserves_order(monkeypatch):
     result = asyncio.run(analyzer.analyze_batch(items))
 
     assert [item.id for item in result] == [item.id for item in items]
+
+
+def test_analyze_batch_raises_temporary_error_when_entire_batch_is_unavailable(monkeypatch):
+    class InternalServerError(Exception):
+        status_code = 500
+
+    analyzer = ContentAnalyzer(SimpleNamespace())
+    items = [_make_item("rss:test:1"), _make_item("rss:test:2")]
+
+    async def fake_analyze_item(item):
+        raise InternalServerError("upstream unavailable")
+
+    monkeypatch.setattr(analyzer, "_analyze_item", fake_analyze_item)
+
+    with pytest.raises(TransientAnalysisError, match="all 2 items failed"):
+        asyncio.run(analyzer.analyze_batch(items))
+
+    assert all(item.ai_score == 0.0 for item in items)
+
+
+def test_transient_error_detection_unwraps_exhausted_retry():
+    class InternalServerError(Exception):
+        status_code = 500
+
+    class RetryError(Exception):
+        def __init__(self):
+            self.last_attempt = SimpleNamespace(
+                exception=lambda: InternalServerError("upstream unavailable")
+            )
+
+    assert ContentAnalyzer._is_transient_error(RetryError()) is True
+
+
+def test_analyze_batch_does_not_abort_on_partial_transient_failure(monkeypatch):
+    class InternalServerError(Exception):
+        status_code = 500
+
+    analyzer = ContentAnalyzer(SimpleNamespace())
+    items = [_make_item("rss:test:1"), _make_item("rss:test:2")]
+
+    async def fake_analyze_item(item):
+        if item.id.endswith(":1"):
+            raise InternalServerError("upstream unavailable")
+        item.ai_score = 8.0
+
+    monkeypatch.setattr(analyzer, "_analyze_item", fake_analyze_item)
+
+    result = asyncio.run(analyzer.analyze_batch(items))
+
+    assert [item.ai_score for item in result] == [0.0, 8.0]
+
+
+def test_analyze_batch_raises_non_temporary_error_for_permanent_batch_failure(monkeypatch):
+    analyzer = ContentAnalyzer(SimpleNamespace())
+    items = [_make_item("rss:test:1")]
+
+    async def fake_analyze_item(item):
+        raise ValueError("invalid request")
+
+    monkeypatch.setattr(analyzer, "_analyze_item", fake_analyze_item)
+
+    with pytest.raises(AnalysisBatchError, match="failed for all 1 items") as exc_info:
+        asyncio.run(analyzer.analyze_batch(items))
+
+    assert not isinstance(exc_info.value, TransientAnalysisError)

@@ -10,10 +10,10 @@
     "ai agents": 2.0,
     "web scraping": 1.0,
     "tool use": 1.0,
-    "open-source": 1.0,
+    "open-source": 2.0,
     "china market": 1.0,
     "anthropic": 1.0,
-    "claude": 1.0,
+    "claude": 2.0,
     "access restrictions": 1.0,
     "ai policy": 1.0,
     "identity verification": 1.0,
@@ -41,7 +41,9 @@
     "multi-agent workflows": 1.0,
     "claude code": 1.0,
     "codex": 1.0,
-    "agent coordination": 1.0
+    "agent coordination": 1.0,
+    "computer-vision": 1.0,
+    "music-tech": 1.0
   },
   "suppress": {
     "ml-research": -3.0,

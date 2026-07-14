@@ -75,6 +75,7 @@ jobs:
             horizon-seen-
 
       - name: Run Horizon
+        timeout-minutes: 60
         env:
           # Map secrets to environment variables expected by config.json
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -82,13 +83,32 @@ jobs:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
           LWN_KEY: ${{ secrets.LWN_KEY }}
+          AI_RETRY_DELAY_SECONDS: "1800"
         shell: bash
         run: |
           HOURS=24
           if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.dry_run }}" == "true" ]]; then
             HOURS="${{ inputs.hours }}"
           fi
+
+          set +e
           uv run horizon --hours "$HOURS"
+          first_status=$?
+          set -e
+
+          if [[ "$first_status" -eq 75 ]]; then
+            echo "::warning::AI analysis was temporarily unavailable. Retrying once after 30 minutes."
+            {
+              echo "## Delayed AI retry"
+              echo "The first analysis attempt hit a temporary provider outage."
+              echo "Horizon will retry the complete task once after a 30-minute cooldown."
+            } >> "$GITHUB_STEP_SUMMARY"
+            sleep "$AI_RETRY_DELAY_SECONDS"
+            echo "::notice::Cooldown complete; starting the final Horizon attempt."
+            uv run horizon --hours "$HOURS"
+          else
+            exit "$first_status"
+          fi
 
       - name: Upload dry-run artifacts
         if: github.event_name == 'workflow_dispatch' && inputs.dry_run == true

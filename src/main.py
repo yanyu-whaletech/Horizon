@@ -8,11 +8,13 @@ from pathlib import Path
 from dotenv import load_dotenv
 from rich.console import Console
 
+from .ai.analyzer import TransientAnalysisError
 from .storage.manager import ConfigError, StorageManager
 from .orchestrator import HorizonOrchestrator
 
 
 console = Console()
+TEMPORARY_FAILURE_EXIT_CODE = 75
 
 
 def print_banner():
@@ -79,6 +81,12 @@ def main():
     except KeyboardInterrupt:
         console.print("\n[yellow]⚠️  Interrupted by user[/yellow]")
         sys.exit(0)
+    except TransientAnalysisError as e:
+        console.print(f"\n[bold yellow]⏳ Temporary AI failure: {e}[/bold yellow]")
+        console.print(
+            "[yellow]Exit code 75 requests one delayed retry from the scheduler.[/yellow]"
+        )
+        sys.exit(TEMPORARY_FAILURE_EXIT_CODE)
     except Exception as e:
         console.print(f"\n[bold red]❌ Fatal error: {e}[/bold red]")
         import traceback

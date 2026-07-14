@@ -15,6 +15,14 @@ from ..models import ContentItem
 DEFAULT_THROTTLE_SEC = 0.0
 
 
+class AnalysisBatchError(RuntimeError):
+    """Raised when no item in a non-empty batch could be analyzed."""
+
+
+class TransientAnalysisError(AnalysisBatchError):
+    """Raised when a whole batch failed because the AI service was unavailable."""
+
+
 class ContentAnalyzer:
     """Analyzes content items using AI to determine importance."""
 
@@ -46,11 +54,13 @@ class ContentAnalyzer:
         concurrency = self._get_concurrency()
         semaphore = asyncio.Semaphore(concurrency)
 
-        async def _process(item: ContentItem, index: int, progress_task) -> ContentItem:
+        async def _process(item: ContentItem, index: int, progress_task):
+            error: Optional[Exception] = None
             async with semaphore:
                 try:
                     await self._analyze_item(item)
                 except Exception as e:
+                    error = e
                     print(f"Error analyzing item {item.id}: {e}")
                     item.ai_score = 0.0
                     item.ai_reason = "Analysis failed"
@@ -58,7 +68,7 @@ class ContentAnalyzer:
                 if throttle_sec > 0 and index < len(items) - 1:
                     await asyncio.sleep(throttle_sec)
             progress.advance(progress_task)
-            return item
+            return item, error
 
         with Progress(
             SpinnerColumn(),
@@ -71,9 +81,59 @@ class ContentAnalyzer:
             coros = [
                 _process(item, i, task) for i, item in enumerate(items)
             ]
-            analyzed_items = await asyncio.gather(*coros)
+            results = await asyncio.gather(*coros)
+
+        analyzed_items = [item for item, _ in results]
+        failures = [error for _, error in results if error is not None]
+        if analyzed_items and len(failures) == len(analyzed_items):
+            if all(self._is_transient_error(error) for error in failures):
+                raise TransientAnalysisError(
+                    f"AI analysis temporarily unavailable: all {len(failures)} items failed"
+                )
+            raise AnalysisBatchError(
+                f"AI analysis failed for all {len(failures)} items"
+            )
 
         return analyzed_items
+
+    @staticmethod
+    def _is_transient_error(error: Exception) -> bool:
+        """Return whether an exhausted analysis error is safe to retry later."""
+        last_attempt = getattr(error, "last_attempt", None)
+        if last_attempt is not None:
+            try:
+                nested = last_attempt.exception()
+            except Exception:
+                nested = None
+            if nested is not None:
+                error = nested
+
+        status_code = getattr(error, "status_code", None)
+        if status_code == 429 or (
+            isinstance(status_code, int) and 500 <= status_code <= 599
+        ):
+            return True
+
+        error_name = type(error).__name__.lower()
+        message = str(error).lower()
+        transient_names = (
+            "internalservererror",
+            "ratelimiterror",
+            "apitimeouterror",
+            "apiconnectionerror",
+            "timeouterror",
+            "connectionerror",
+        )
+        return any(name in error_name for name in transient_names) or any(
+            marker in message
+            for marker in (
+                "internal server error",
+                "rate limit",
+                "service unavailable",
+                "bad gateway",
+                "gateway timeout",
+            )
+        )
 
     @retry(
         stop=stop_after_attempt(3),

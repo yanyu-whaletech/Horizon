@@ -6,8 +6,8 @@
     "funding": 1.5,
     "startup": 1.5,
     "model-release": 2.0,
-    "mcp": 1.5,
-    "ai agents": 2.0,
+    "mcp": 2.5,
+    "ai agents": 3.0,
     "web scraping": 1.0,
     "tool use": 1.0,
     "open-source": 2.0,
@@ -43,7 +43,10 @@
     "codex": 1.0,
     "agent coordination": 1.0,
     "computer-vision": 1.0,
-    "music-tech": 1.0
+    "music-tech": 1.0,
+    "coding agents": 1.0,
+    "open source": 1.0,
+    "developer tools": 1.0
   },
   "suppress": {
     "ml-research": -3.0,
@@ -54,7 +57,7 @@
     "benchmark": -2.0,
     "database": -2.0,
     "sqlite": -3.0,
-    "developer tools": -1.5,
+    "developer tools": -0.5,
     "code intelligence": -1.5,
     "alexa+": -1.5,
     "amazon": -1.5,
